@@ -526,7 +526,7 @@ These are the honest constraints of a university hackathon. The architecture is 
 | Diptesh Khandual and Harshita Pattnaik | Backend and Frontend — Spring Boot Core + Trigger Engine + React PWA | Spring Boot project setup, REST controllers (Workers, Policies, Claims, Payouts), Spring Data JPA entities and repositories, Supabase/PostgreSQL integration, TriggerEngineService (scheduled polling every 10 min), OpenWeatherMap API integration, PremiumCalcService, React PWA setup with Tailwind CSS, Onboarding and WorkerDashboard pages, UPI deep links, Browser Push API notifications |
 | Dancy Paul | ML Engineer — Python Service | Synthetic data generation, XGBoost risk model training, Isolation Forest fraud model training, Flask/FastAPI service with /score-risk and /score-fraud endpoints, REST integration with Spring Boot |
 | Suman Kumar Sahu | ML Engineer — Python Service | Synthetic data generation support, model evaluation and tuning, Flask/FastAPI service testing, mock API controllers (AQI, Curfew, Platform Activity), Razorpay sandbox integration |
-| Durga Prasad Naik | Frontend — Admin Dashboard and QA | AdminPanel page, RiskHeatmap with Leaflet.js and OpenStreetMap, end-to-end integration testing, demo data seeding, pitch deck |
+| Durga Prasad Nayak | Frontend — Admin Dashboard and QA | AdminPanel page, RiskHeatmap with Leaflet.js and OpenStreetMap, end-to-end integration testing, demo data seeding, pitch deck |
 
 ---
 
