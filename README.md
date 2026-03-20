@@ -91,13 +91,13 @@ graph TB
         W4[Mock Platform API<br/>Delivery Activity]
     end
 
-    subgraph CORE["Core Backend — Node.js + Express"]
+    subgraph CORE["Core Backend — Spring Boot (Java 17+)"]
         TE[Trigger Engine<br/>Polls every 10 min]
         RE[AI Risk Engine<br/>Premium Calculator]
         FD[Fraud Detector<br/>Rule + ML Layer]
     end
 
-    subgraph ML["ML Service — Python + Flask"]
+    subgraph ML["ML Service — Python + Flask/FastAPI"]
         RM[Risk Model<br/>XGBoost]
         FM[Fraud Model<br/>Isolation Forest]
     end
@@ -109,9 +109,9 @@ graph TB
     end
 
     subgraph DB["Database — PostgreSQL on Supabase"]
-        D1[(Workers &amp; Zones)]
+        D1[(Workers & Zones)]
         D2[(Policies)]
-        D3[(Claims &amp; Payouts)]
+        D3[(Claims & Payouts)]
     end
 
     subgraph FE["Frontend — React PWA"]
@@ -316,7 +316,7 @@ flowchart TD
 
 **Training data:** Synthetic dataset of ~2,000 worker profiles generated using Python (Faker + NumPy), labelled with realistic risk scores.
 
-**Implementation:** scikit-learn XGBoost → `risk_model.pkl` → served via Flask at `/score-risk`
+**Implementation:** scikit-learn XGBoost → `risk_model.pkl` → served via Flask/FastAPI at `/score-risk` → called via REST from Spring Boot backend
 
 ---
 
@@ -326,13 +326,13 @@ Layer 1 hard rules run first (fast, no model needed). Layer 2 Isolation Forest r
 
 **Training data:** Synthetic claim records, with ~15% labelled as fraudulent using the same rule patterns.
 
-**Implementation:** scikit-learn IsolationForest → `fraud_model.pkl` → served via Flask at `/score-fraud`
+**Implementation:** scikit-learn IsolationForest → `fraud_model.pkl` → served via Flask/FastAPI at `/score-fraud` → called via REST from Spring Boot backend
 
 ---
 
 ### 3. Predictive Disruption Nudge
 
-Using the OpenWeatherMap 7-day forecast API, a scheduled job checks if high rainfall or heat is expected in any active zone. Workers without active coverage receive a push notification 3 days in advance. This is not ML — it is a cron job — but it demonstrates proactive UX that traditional insurance never offers.
+Using the OpenWeatherMap 7-day forecast API, a scheduled job checks if high rainfall or heat is expected in any active zone. Workers without active coverage receive a push notification 3 days in advance. This is not ML — it is a scheduled Spring `@Scheduled` task — but it demonstrates proactive UX that traditional insurance never offers.
 
 ---
 
@@ -419,14 +419,14 @@ erDiagram
 | Layer | Technology | Reason |
 |---|---|---|
 | Frontend | React.js + Tailwind CSS (PWA) | Fast to build, mobile-friendly, no app store |
-| Backend | Node.js + Express.js | JavaScript end-to-end, fast scaffolding |
-| ML Service | Python 3.11 + Flask + scikit-learn | Industry standard for quick ML prototypes |
-| Database | PostgreSQL on Supabase (free tier) | Hosted Postgres, REST API, free dashboard |
+| Backend | Spring Boot (Java 17+) + Spring Web + Spring Data JPA | Robust, scalable, industry-standard Java backend |
+| ML Service | Python 3.11 + Flask/FastAPI + scikit-learn (called via REST from Spring Boot) | Best for quick ML prototyping, integrates seamlessly with Spring Boot |
+| Database | PostgreSQL on Supabase (free tier) | Hosted Postgres, easy integration with Spring Boot via JPA |
 | Weather API | OpenWeatherMap (free tier) | 1,000 calls/day, clean JSON, reliable |
-| AQI / Alerts | Custom mock API (Node.js) | No public free API with required granularity |
-| Payments | Razorpay test mode / DB simulation | Problem statement permits sandbox |
+| AQI / Alerts | Custom API (Spring Boot) | Unified backend, no dependency on Node.js |
+| Payments | Razorpay test mode / DB simulation | Supports Java integration, suitable for sandbox use |
 | Maps | Leaflet.js + OpenStreetMap | Free, no API key needed |
-| Deployment | Vercel + Render + Supabase | All free tiers, sufficient for demo |
+| Deployment | Vercel (frontend) + Render (Spring Boot backend) + Supabase | All free tiers, supports Java deployment |
 | Notifications | Browser Push API (PWA) | No third-party dependency |
 
 ---
@@ -455,24 +455,27 @@ gigshield/
 ├── docs/
 │   └── architecture-diagram.png
 │
-├── backend/                        # Node.js + Express
-│   ├── src/
-│   │   ├── routes/
-│   │   │   ├── workers.js          # Registration, profile, zone assignment
-│   │   │   ├── policies.js         # Create policy, weekly renewal, pricing
-│   │   │   ├── claims.js           # Auto-initiation, status, history
-│   │   │   └── payouts.js          # Trigger and record disbursements
-│   │   ├── services/
-│   │   │   ├── triggerEngine.js    # Polls APIs, checks thresholds every 10 min
-│   │   │   ├── fraudDetector.js    # Calls ML service + runs rule layer
-│   │   │   └── premiumCalc.js      # Calls ML service, applies season/history adj
-│   │   ├── config/
-│   │   │   └── triggers.json       # Threshold config (editable without code change)
-│   │   └── db/
-│   │       └── schema.sql
-│   └── package.json
+├── backend/                        # Spring Boot (Java 17+)
+│   ├── src/main/java/com/gigshield/
+│   │   ├── controller/
+│   │   │   ├── WorkerController.java      # Registration, profile, zone assignment
+│   │   │   ├── PolicyController.java      # Create policy, weekly renewal, pricing
+│   │   │   ├── ClaimController.java       # Auto-initiation, status, history
+│   │   │   └── PayoutController.java      # Trigger and record disbursements
+│   │   ├── service/
+│   │   │   ├── TriggerEngineService.java  # Polls APIs, checks thresholds every 10 min
+│   │   │   ├── FraudDetectorService.java  # Calls ML service + runs rule layer
+│   │   │   └── PremiumCalcService.java    # Calls ML service, applies season/history adj
+│   │   ├── repository/                    # Spring Data JPA repositories
+│   │   ├── model/                         # JPA entity classes
+│   │   └── config/
+│   │       └── triggers.json              # Threshold config (editable without code change)
+│   ├── src/main/resources/
+│   │   ├── application.yml
+│   │   └── schema.sql
+│   └── pom.xml
 │
-├── ml-service/                     # Python + Flask
+├── ml-service/                     # Python + Flask/FastAPI
 │   ├── app.py                      # /score-risk and /score-fraud endpoints
 │   ├── models/
 │   │   ├── risk_model.pkl
@@ -494,11 +497,11 @@ gigshield/
 │   │       └── PremiumCard.jsx
 │   └── package.json
 │
-└── mock-apis/                      # Simulated external feeds
-    ├── weather-mock.js
-    ├── aqi-mock.js
-    ├── curfew-alert-mock.js
-    └── platform-activity-mock.js
+└── mock-apis/                      # Simulated external feeds (Spring Boot controllers)
+    ├── WeatherMockController.java
+    ├── AqiMockController.java
+    ├── CurfewAlertMockController.java
+    └── PlatformActivityMockController.java
 ```
 
 ---
@@ -553,7 +556,7 @@ We're being upfront about what this is and isn't at the hackathon stage:
 - All claim and payout records are real database entries
 
 **What is mocked or simulated:**
-- T3 (AQI), T4 (curfew), T5 (platform outage) use mock APIs with controlled JSON
+- T3 (AQI), T4 (curfew), T5 (platform outage) use mock Spring Boot controllers with controlled JSON
 - Delivery platform activity (Zomato/Swiggy have no public API) is simulated
 - UPI payout is a database write + notification — not a live bank transfer
 - KYC verification is a checkbox — not integrated with Aadhaar
@@ -565,12 +568,13 @@ These are the honest constraints of a university hackathon. The architecture is 
 
 ## Team
 
-| Name | Role |
-|---|---|
-| [Team Member 1] | Backend + Trigger Engine |
-| [Team Member 2] | ML Models + Python Service |
-| [Team Member 3] | Frontend + UI/UX |
-| [Team Member 4] | Integrations + Admin Dashboard |
+| Name | Role | Responsibilities |
+|---|---|---|
+| [Team Member 1] | Backend Lead — Spring Boot Core | Spring Boot project setup, REST controllers (Workers, Policies, Claims, Payouts), Spring Data JPA entities & repositories, Supabase/PostgreSQL integration, application configuration |
+| [Team Member 2] | Backend — Trigger Engine & Integrations | TriggerEngineService (scheduled polling every 10 min), OpenWeatherMap API integration, PremiumCalcService, mock API controllers (AQI, Curfew, Platform Activity), Razorpay sandbox integration |
+| [Team Member 3] | ML Engineer — Python Service | Synthetic data generation, XGBoost risk model training, Isolation Forest fraud model training, Flask/FastAPI service with `/score-risk` and `/score-fraud` endpoints, REST integration with Spring Boot |
+| [Team Member 4] | Frontend Developer — React PWA | React PWA setup with Tailwind CSS, Onboarding & WorkerDashboard pages, PremiumCard & DisruptionSimulator components, UPI deep links, Browser Push API notifications |
+| [Team Member 5] | Frontend — Admin Dashboard & QA | AdminPanel page, RiskHeatmap with Leaflet.js + OpenStreetMap, end-to-end integration testing, demo data seeding, pitch deck & 5-min demo video |
 
 ---
 
